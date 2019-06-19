@@ -9,7 +9,9 @@
 
       Check spelling errors before you hit enter.
       Read the prompts carefully for correct format.
-      .PST files are located in \\venom\Outlook Backups
+      .PST files are located in \\SOMESERVER\Outlook Backups
+      
+      SCRIPT EDITED FOR GITHUB
 
 
     .NOTES
@@ -46,8 +48,8 @@ function kff-ADuser {
         $Lname = read-host = "Enter last name"
         $script:fullname = "$Fname"+" "+"$Lname"
         $script:username = read-host = "Enter username (First name + initial of Last name, e.g. JohnD)"
-        $Fusername = $username+"@kff.org"
-        New-ADUser -Name "$fullname" -GivenName "$Fname" -Surname "$Lname" -DisplayName "$fullname" -SamAccountName "$username" -UserPrincipalName "$Fusername" -Path "OU=Employee Accounts,OU=CA,DC=kff,DC=org" -AccountPassword(Read-Host -AsSecureString "Input Password") -ChangePasswordAtLogon 1 -Enabled $true
+        $Fusername = $username+"@SOMEDOMAIN.org"
+        New-ADUser -Name "$fullname" -GivenName "$Fname" -Surname "$Lname" -DisplayName "$fullname" -SamAccountName "$username" -UserPrincipalName "$Fusername" -Path "[AD OU CONTAINER]" -AccountPassword(Read-Host -AsSecureString "Input Password") -ChangePasswordAtLogon 1 -Enabled $true
         write-host = "Account created for [$fullname]!" -ForegroundColor Green
         userinfo
     }
@@ -98,8 +100,8 @@ function altemail {
             try
             {
                 Write-host = "Add an alternative STMP address" -ForegroundColor Green
-                $altemail = read-host = "Enter alternate email (e.g. JDoe---DO NOT ADD @KFF.ORG!)"
-                $altemail1 = $altemail + "@kff.org"
+                $altemail = read-host = "Enter alternate email (e.g. JDoe---DO NOT ADD @DOMAIN.ORG!)"
+                $altemail1 = $altemail + "@DOMAIN.org"
                 Set-Mailbox $username -EmailAddresses @{add="$altemail1"} -CustomAttribute1 "CA"
                 write-host = "Email creation completed for [$fullname]" -ForegroundColor Green
                 pause
@@ -121,11 +123,11 @@ function empOffboard {
             $username4 = read-host = "Enter username (First name + initial of Last name, e.g. JohnD)"
             $ADgroups = Get-ADPrincipalGroupMembership -Identity $username4 | where {$_.Name -ne "Domain Users"}
 
-            Write-host = "Exporting user's mailbox to '\\venom\Outlook backup'..." -ForegroundColor green
-            New-MailboxExportRequest -Mailbox $username4 -FilePath "\\venom\Outlook backup\$username4.pst"
+            Write-host = "Exporting user's mailbox to '\\SOMESERVER\Outlook backup'..." -ForegroundColor green
+            New-MailboxExportRequest -Mailbox $username4 -FilePath "\\SOMESERVER\Outlook backup\$username4.pst"
 
             Write-host = "Removing user's AD information..." -ForegroundColor green
-            Set-aduser -identity $username4 -office $null -OfficePhone $null -clear ipPhone -description " Automated termination by $env:UserName ... Script location: \\venom\scripts\SOP_functions.ps1" -Department $null -confirm
+            Set-aduser -identity $username4 -office $null -OfficePhone $null -clear ipPhone -description " Automated termination by $env:UserName ... Script location: \\SOMESERVER\scripts\SOP_functions.ps1" -Department $null -confirm
 
             Write-host = "Removing user's permissions..." -ForegroundColor green
             if ($adgroups -eq $null) {
@@ -134,14 +136,14 @@ function empOffboard {
                 $permission = Remove-ADPrincipalGroupMembership -Identity "$username4" -MemberOf $ADgroups -Confirm
                 } 
 
-            Write-host = "Changing user's password to default KFF password..." -ForegroundColor green
-            Set-ADAccountPassword -Identity $username4 -NewPassword (ConvertTo-SecureString -AsPlainText "KFF P@ssw0rd" -Force)
+            Write-host = "Changing user's password to default password..." -ForegroundColor green
+            Set-ADAccountPassword -Identity $username4 -NewPassword (ConvertTo-SecureString -AsPlainText "[REDACTED]" -Force)
 
             Write-host = "Disabling user's account..." -ForegroundColor green
             Disable-ADAccount -Identity $username4
 
             Write-host = "Moving user object to 'To Delete' OU..." -ForegroundColor green
-            Get-aduser $username4 | Move-ADObject -TargetPath "OU=To Delete,OU=Employee Accounts,OU=CA,DC=kff,DC=org"
+            Get-aduser $username4 | Move-ADObject -TargetPath "OU=To Delete,OU=Employee Accounts"
             pause
         }
         catch [Microsoft.ActiveDirectory.Management.ADIdentityNotFoundException]
@@ -878,7 +880,7 @@ HKLM:\SOFTWARE\Microsoft\ExchangeServer\v$VNString\Setup : MsiProductMajor
 ######## Main menu ####
 Import-ModuleExchange -Credential (Get-Credential)
 write-host ="Testing Get-mailbox command..." -ForegroundColor red
-get-mailbox sftemp1
+get-mailbox TESTEMAIL
 
 do
 {
